@@ -1,0 +1,114 @@
+<%!
+import pylons
+from pylons import tmpl_context as c
+from vanillons.lib import helpers as h
+%>
+<%
+if not c.meta:
+    c.meta = {}
+%>
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        % if c.meta:
+            % for name, content in c.meta.iteritems():
+                <meta name="${name}" content="${content.replace('"',r'\"')}"/>
+            % endfor
+        % endif
+        ## <link rel="Shortcut Icon" href="${h.static_url('i', 'favicon.ico')}" type="image/x-icon"/>
+        <title>${c.title or 'Welcome'}</title>
+		
+		<%def name="js_includes()">
+			<script type="text/javascript" src="${h.js_url('jquery.js')}"></script>
+			<script type="text/javascript">
+            /*<![CDATA[*/
+            /*]]>*/
+            </script>
+        </%def>
+        ${self.js_includes()}
+        
+        <%def name="header()">
+			<link rel="stylesheet" href="${h.static_url('c', 'main.css')}" />
+			
+			<!--[if IE]>
+            <link rel="stylesheet" href="${h.static_url('c', 'ie.css')}" />
+            <![endif]-->
+        </%def>
+        ${self.header()}
+        
+    </head>
+
+    <body id="${pylons.request.path.strip('/').replace('/','_')}">
+        
+		<div id="header"><header>
+			<div id="header-inner"><hgroup>
+                <h1>Vanillons</h1>
+                <h2>Make shit. Quickly.</h2>
+            </hgroup></div>
+		</header></div>
+		
+		<%def name="pre_content()"></%def>
+		${self.pre_content()}
+        <div id="page">
+            <div id="page-inner">
+			
+                % if c.announcement:
+                    <div class="announcement announcement-${c.announcement['type']} ${c.announcement.get('multiline') and 'multiline' or ''}">
+                        <div class="top"></div>
+                        <div class="content">
+                            <img src="${h.static_url('i', 'site/note_icon_%s.png' % c.announcement['type'])}" />
+                            <div>${c.announcement['message'] | n}</div>
+                        </div>
+                        <div class="bottom"></div>
+                    </div>
+                % endif
+                
+                ${next.body()}
+            </div>
+        </div> <!--page-->
+		<%def name="post_content()"></%def>
+		${self.post_content()}
+		
+		<div id="footer"><footer>
+			<div id="footer-inner">
+                <p>
+                    Copyright &copy; 2010 ben ogle
+                </p>
+            </div>
+		</footer></div>
+		
+		<%def name="debug_bar()">
+			<div id="fancy-debug-bar">
+				<% num_queries = len(c.queries) %>
+				<span class="mini total-queries" title="Double-click to open">
+					${num_queries}
+				</span>
+				
+				<div class="full">
+					<div class="total-info" title="Double-click to minify">
+                        <a href="#" class="last-error" target="applicationerror">last error</a>
+						<span class="data-chunk first">
+							<span class="total-queries data">${num_queries}</span> queries
+						</span>
+						<span class="data-chunk">
+							Query Time: <span class="total-query-time data">${"%.3f" % (c.query_time or 0)}</span> sec
+						</span>
+						<span class="data-chunk">
+							Total Time: <span class="total-time data">${"%.3f" % (time() - c.render_start)}</span> sec
+						</span>
+					</div>
+					
+					<div id="requests">
+						${main_utils.render_request_data(True)}
+					</div>
+				</div>
+				
+            </div>
+		</%def>
+        % if c.show_debug_bar:
+            ${self.debug_bar()}
+        % endif
+    </body>
+</html>
