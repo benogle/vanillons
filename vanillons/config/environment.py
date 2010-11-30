@@ -46,8 +46,9 @@ def load_environment(global_conf, app_conf):
         imports=['from webhelpers.html import escape'])
 
     # Setup the SQLAlchemy database engine
-    engine = engine_from_config(config, 'sqlalchemy.')
-    init_model(engine)
+    config['pylons.app_globals'].sa_default_engine = engine_from_config(config, 'sqlalchemy.default.')#, proxy=TimerProxy())
+    #engine = engine_from_config(config, 'sqlalchemy.default.')
+    init_model(config['pylons.app_globals'].sa_default_engine)
 
     # CONFIGURATION OPTIONS HERE (note: all config options will override
     # any Pylons config options)

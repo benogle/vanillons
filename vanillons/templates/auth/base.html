@@ -1,0 +1,8 @@
+<%inherit file="/base.html"/>
+
+<%def name="js_includes()">
+    ${parent.js_includes()}
+    <script type="text/javascript" src="${h.js_url('controllers/auth.js')}"></script>
+</%def>
+
+${next.body()}

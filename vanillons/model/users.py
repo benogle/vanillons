@@ -3,9 +3,25 @@ from sqlalchemy.orm import relation, backref
 
 import pytz
 from vanillons.model.meta import Session, Base
+import hashlib
+
+from datetime import datetime
+
+ROLE_USER = u'user'
+ROLE_ADMIN = u'admin'
+ROLE_ENGINEER = u'engineer'
 
 def now():
-    return datetime.datetime.utcnow()
+    return datetime.utcnow()
+
+def hash_password(clear_pass):
+    """
+    Used to encrypt our passwords with our special salt.
+    """
+    salt = u"c4tsareninjasMeow".encode('utf-8')
+    hash = hashlib.md5( salt + clear_pass.encode("utf-8") ).hexdigest()
+
+    return hash.decode('utf-8')
 
 class UserPreference(Base):
     """

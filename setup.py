@@ -16,7 +16,7 @@ setup(
         "Pylons>=1.0",
         "SQLAlchemy>=0.5",
         "python-memcached==1.44",
-        "sqlalchemy-migrate==0.5.4",
+        "sqlalchemy-migrate==0.6",
         "pytz==2010e",
     ],
     setup_requires=["PasteScript>=1.6.3"],

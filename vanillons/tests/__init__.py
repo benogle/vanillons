@@ -9,6 +9,7 @@ setup-app`) and provides the base testing objects.
 """
 from unittest import TestCase
 
+from paste import fixture
 from paste.deploy import loadapp
 from paste.script.appinstall import SetupCommand
 from pylons import url
@@ -17,10 +18,17 @@ from webtest import TestApp
 
 import pylons.test
 
-from vanillons.lib.utils import objectify
+from pylons_common.lib.log import create_logger
+logger = create_logger('vanillons.tests')
+
+from pylons_common.lib.utils import objectify
+from pylons_common.lib.exceptions import ClientException, CompoundException
 import simplejson as json
 
-__all__ = ['environ', 'url', 'TestController']
+import formencode
+
+from vanillons.model.meta import Session
+from vanillons.lib.helpers import url_for
 
 # Invoke websetup with the current config file
 SetupCommand('setup-app').run([pylons.test.pylonsapp.config['__file__']])
@@ -39,22 +47,8 @@ class TestRollback(TestCase):
     keep_data = False
     
     def setUp(self):
-        self._session = Session()
+        self._session = Session
         self.clear()
-
-        engine = self._session.bind
-        
-        #conn = engine.connect()
-        global test_sa_connection
-        test_sa_connection = engine
-        
-        # bind the current session to a Connection - that way all code that gets connections
-        # via this session is guaranteed to get the same Connection (including via the connect() method)
-        
-        #sac.session_context.current = sa.create_session(bind_to=sac.session_context.current.bind_to)
-        #self._trans = sac.session.create_transaction()
-        #global test_sa_session
-        #test_sa_session = sac.session_context.current
     
     def tearDown(self):
         if self.keep_data:
@@ -74,8 +68,6 @@ class TestRollback(TestCase):
 
     def clear(self):
         self._session.expunge_all()
-        from adroll.model import taggable
-        taggable.EntitySingleton.instances.clear()
 
 
 class TestController(TestRollback):
@@ -85,7 +77,7 @@ class TestController(TestRollback):
         print sys.argv
         self.wsgiapp = pylons.test.pylonsapp
         self.config = self.wsgiapp.config
-        self.app = paste.fixture.TestApp(self.wsgiapp)
+        self.app = fixture.TestApp(self.wsgiapp)
         url._push_object(URLGenerator(self.config['routes.map'], environ))
         
         TestRollback.__init__(self, *args, **kwargs)
@@ -118,11 +110,11 @@ class TestController(TestRollback):
             else:
                 kw[k] = v
     
-    def get(self, url, params=None, **kw):
+    def get(self, url, params=None, headers={'Accept': 'text/html'}, **kw):
 
         dict = self.get_auth_kw()
         self.__merge_dictionaries__(dict, kw)
-        response = self.app.get(url, params, **kw)
+        response = self.app.get(url, params, headers=headers, **kw)
 
         return response
 
@@ -132,7 +124,7 @@ class TestController(TestRollback):
             return obj.encode('utf-8')
         return obj
     
-    def post(self, url, params=None, **kw):
+    def post(self, url, params=None, headers={'Accept': 'text/html'}, **kw):
         
         auth_dict = self.get_auth_kw()
         self.__merge_dictionaries__(auth_dict, kw)
@@ -165,9 +157,10 @@ class TestController(TestRollback):
                     else:
                         value = pair[1]
                     params[i] = (key, value)
-        return self.app.post(url, params, **kw)
+        return self.app.post(url, params, headers=headers, **kw)
     
     def client_async(self, url, params={}, method='post', assert_success=True, **args):
+        args.setdefault('headers', {'Accept': 'application/json'})
         if method == 'post':
             r = self.post(url, params=params, **args)
         else:
@@ -185,7 +178,7 @@ class TestController(TestRollback):
             response = response.follow()
         return "Please Sign In" in response
     
-    def throws_exception(self, fn, types=(errors.ClientException, formencode.validators.Invalid)):
+    def throws_exception(self, fn, types=(ClientException, CompoundException, formencode.validators.Invalid)):
         """
         Will return the exception if the function calls one, and false if not.
         

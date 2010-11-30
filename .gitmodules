@@ -1,0 +1,3 @@
+[submodule "vanillons/javascript/quaid"]
+	path = vanillons/javascript/quaid
+	url = git@github.com:benogle/quaid.git

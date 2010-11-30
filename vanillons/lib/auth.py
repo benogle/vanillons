@@ -2,8 +2,16 @@ import pylons
 from pylons import session, request, tmpl_context as c
 import helpers as h
 
+from pylons_common.lib import exceptions
+
 from vanillons.model.meta import Session
 from vanillons.model import users
+
+from pylons_common.lib.log import logger
+
+from datetime import datetime
+
+import sqlalchemy as sa
 
 def authenticate(username, password, redirect_after=True, from_http_auth=False):
     q = Session.query(users.User)
@@ -11,8 +19,9 @@ def authenticate(username, password, redirect_after=True, from_http_auth=False):
     u = q.first()
     
     if u and u.is_active and u.does_password_match(password):
-        sign_in(u, redirect_after=redirect_after, from_http_auth=from_http_auth)
-        return u
+        return login(u, redirect_after=redirect_after, from_http_auth=from_http_auth)
+    else:
+        raise exceptions.ClientException('Email and password do not match.', code=exceptions.MISMATCH, field='password')
     return None
 
 def authenticate_basic_auth():
@@ -33,7 +42,7 @@ def authenticate_basic_auth():
 ###
 ##
 
-def sign_in(user, redirect_after=True, from_http_auth=False):
+def login(user, redirect_after=True, from_http_auth=False):
     """
     NOTE - this will also trigger a db flush to save last login date
         calling methods should flush their data beforehand
@@ -61,10 +70,7 @@ def sign_in(user, redirect_after=True, from_http_auth=False):
         return
     session.save()
 
-    user.last_login_date = utils.now()
-
-    # TODO can this be called elsewhere to minimize the commits?
-    commit()
+    user.last_login_date = datetime.utcnow()
 
     # Send user back to the page s/he originally wanted to get to
     if redirect_after and session.get('path_before_login'):
@@ -72,22 +78,23 @@ def sign_in(user, redirect_after=True, from_http_auth=False):
         where_to_go = session['path_before_login']
         del session['path_before_login']
         session.save()
-        h.redirect(where_to_go)
+        return where_to_go
+    return None
 
-def sign_out():
+def logout():
     
     session.clear()
     session.save()
 
 def pretend(user, url=None):
-    if is_signed_in():
+    if is_logged_in():
         session['user'] = user.id
         session['username'] = user.username
         session.save()
         h.redirect(url or '/')
 
 def stop_pretending(url=None):
-    if is_signed_in():
+    if is_logged_in():
         session['user'] = session['real_user']
         session['username'] = session['real_username']
         session.save()
@@ -126,7 +133,6 @@ def get_user(key='user'):
     user if an admin is pretending to be someone.
     Returns/sets a cached copy (from the context c var)
     """
-    
     if getattr(c, key):
         return getattr(c, key)
 
@@ -156,7 +162,7 @@ def get_user_ip():
     
     return None
 
-def is_signed_in():
+def is_logged_in():
     if 'real_user' in session:
         return True
     return False
@@ -169,7 +175,7 @@ def is_admin():
 
 def is_in_roles(roles):
     
-    if not is_signed_in():
+    if not is_logged_in():
         return False
     else:
         role = session.get('role', '')

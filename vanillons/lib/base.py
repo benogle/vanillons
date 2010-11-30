@@ -1,16 +1,29 @@
-"""The base Controller API
-
-Provides the BaseController class for subclassing.
 """
+The base Controller API
+"""
+
+#careful with the imports. Controllers import * from here...
 from pylons import tmpl_context as c, config, app_globals as g, request, response, session
+from pylons.controllers.util import redirect
+
+from pylons_common.lib import exceptions, log
+from pylons_common import lib as utils
+from pylons_common.web import validation
+from pylons_common.web.response import *
+
+log.set_default_logger('vanillons')
+from pylons_common.lib.log import logger
+
+import time
+import auth
+import helpers as h
 
 from formencode import htmlfill
 import formencode
 
-#careful with the imports. Controllers import * from here...
 from pylons.controllers import WSGIController
-from pylons.templating import render_mako as render
 
+from vanillons.model import meta
 from vanillons.model.meta import Session
 
 class BaseController(WSGIController):
@@ -18,12 +31,19 @@ class BaseController(WSGIController):
     def render(self, *args, **kw):
         return render_response(*args, **kw)
     
+    def validate(self, validation_class, **kw):
+        return validation.validate(validation_class, **kw)
+    
     def __call__(self, environ, start_response):
         """Invoke the Controller"""
         # WSGIController.__call__ dispatches to the Controller method
         # the request is routed to. This routing information is
         # available in environ['pylons.routes_dict']
         try:
+            self._session = Session
+            
+            c.show_debug = request.environ['show_debug'] = auth.is_admin()
+            
             request.environ['USER'] = session.get('username', '')
             request.environ['REAL_USER'] = session.get('real_username', '')
             
@@ -36,7 +56,7 @@ class BaseController(WSGIController):
             logger.info(c.requested_url)
 
             # Capture IP address in non-ssl mode, so we can use it in SSL mode see ticket #2275
-            ip = h.get_user_ip()
+            ip = auth.get_user_ip()
             if not session.get('IP_ADDRESS') and ip:
                 session['IP_ADDRESS'] = ip
             elif not session.get('IP_ADDRESS') and request.environ.get('HTTP_RLNCLIENTIPADDR'):
@@ -51,7 +71,8 @@ class BaseController(WSGIController):
                 
             return WSGIController.__call__(self, environ, start_response)
         finally:
-            Session.remove()
+            if 'paste.testing_variables' not in request.environ:
+                Session.remove()
     
     def _set_session_for_flash_uploads(self):
         '''
@@ -88,17 +109,23 @@ class BaseController(WSGIController):
             pylons_obj = request.environ['pylons.pylons']
             pylons_obj.session = newsession
     
+    def redirect(self, *args, **kw):
+        return redirect(*args, **kw)
+    
+    def add(self, *args, **kwargs):
+        self._session.add(*args, **kwargs)
+    
     def rollback(self):
         """
         convenience method to rollback the applied data
         """
-        Session.rollback()
+        self._session.rollback()
 
     def flush(self, *args):
         """
         convenience method; flush data into transaction
         """
-        Session.flush(*args)
+        self._session.flush(*args)
            
     def commit(self):
         """
@@ -106,29 +133,7 @@ class BaseController(WSGIController):
         """
         # only do the flushing if we are running functional tests
         if 'paste.testing_variables' in request.environ:
-            Session.flush()
+            logger.info('Flushing, not committing...')
+            self._session.flush()
         else:
-            Session.commit()
-
-def render_response(*args, **kw):
-    """
-    override pylons render_response so that we can supply
-        defaults to a form using htmlfill. form_defaults can
-        either be passed in as part of the keyword dict or
-        on the c variable (ie, c.form_defaults = dict(...))
-    """
-    form_defaults = kw.pop('form_defaults', False)
-    # the prepare_form method puts the defaults on c.form_defaults
-    if not form_defaults and c.form_defaults:
-        form_defaults = c.form_defaults
-        
-    content = render(*args, **kw)
-    
-    def formatter_that_doesnt_suck(error):
-        return 'no suckage'
-    
-    # pylons does htmlfill.render on pages that have errors, so don't do it here (pylons.decorators.__init__.py line 183)
-    if not c.form_errors:
-        if form_defaults:
-            content = htmlfill.render(content, defaults=form_defaults, encoding="utf-8")
-    return content
+            self._session.commit()

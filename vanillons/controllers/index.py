@@ -4,5 +4,5 @@ class IndexController(BaseController):
     """
     """
     def index(self):
-        return render('/index/index.html')
+        return self.render('/index/index.html')
 
