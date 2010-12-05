@@ -1,0 +1,20 @@
+<%inherit file="/base.html"/>
+<%namespace name="f" file="/forms.html"/>
+
+<%def name="header()">
+    ${parent.header()}
+    <link rel="stylesheet" href="${h.static_url('c', 'test/qunit.css')}"/>
+    <script type="text/javascript" src="${h.js_url('test/qunit.js')}"></script>
+    <script type="text/javascript">
+        $(document).ready(function(){
+        });
+    </script>
+</%def>
+
+<h1 id="qunit-header">QUnit</h1>
+<h2 id="qunit-banner"></h2>
+<div id="qunit-testrunner-toolbar"></div>
+<h2 id="qunit-userAgent"></h2>
+<ol id="qunit-tests"></ol>
+
+<div id="qunit-fixture"></div>

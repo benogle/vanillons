@@ -1,6 +1,8 @@
 """Pylons environment configuration"""
 import os
 
+import pylons
+
 from mako.lookup import TemplateLookup
 from pylons.configuration import PylonsConfig
 from pylons.error import handle_mako_error
@@ -10,6 +12,8 @@ import vanillons.lib.app_globals as app_globals
 import vanillons.lib.helpers
 from vanillons.config.routing import make_map
 from vanillons.model import init_model
+
+from pylons_common.sqlalchemy.proxy import TimerProxy
 
 def load_environment(global_conf, app_conf):
     """Configure the Pylons environment via the ``pylons.config``
@@ -46,8 +50,7 @@ def load_environment(global_conf, app_conf):
         imports=['from webhelpers.html import escape'])
 
     # Setup the SQLAlchemy database engine
-    config['pylons.app_globals'].sa_default_engine = engine_from_config(config, 'sqlalchemy.default.')#, proxy=TimerProxy())
-    #engine = engine_from_config(config, 'sqlalchemy.default.')
+    config['pylons.app_globals'].sa_default_engine = engine_from_config(config, 'sqlalchemy.default.', proxy=TimerProxy())
     init_model(config['pylons.app_globals'].sa_default_engine)
 
     # CONFIGURATION OPTIONS HERE (note: all config options will override

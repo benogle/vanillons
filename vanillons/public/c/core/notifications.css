@@ -1,0 +1,30 @@
+/*** error display ***/
+#error-display{
+    position: fixed;
+    top: 0;
+    background: #C8803D;
+    -moz-border-radius: 0px 0px 5px 5px;
+    padding: 0px 15px;
+    color: #fff;
+    -moz-box-shadow: 0px 1px 8px #555;
+    -webkit-box-shadow: 0px 1px 8px #555;
+    box-shadow: 0px 1px 8px #555;
+    width: 930px;
+    z-index: 1001;
+    display: none;
+}
+#error-display h4{
+    color: #9A5C24;
+    font-size: 10pt;
+    font-style: italic;
+    margin: 10px 0;
+}
+#error-display .error{
+    margin: 10px 0;
+    font-weight: bold;
+}
+#error-display .dismiss{
+    color: #9A5C24;
+    float: right;
+    margin-top: 10px;
+}

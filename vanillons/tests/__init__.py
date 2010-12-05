@@ -28,7 +28,7 @@ import simplejson as json
 import formencode
 
 from vanillons.model.meta import Session
-from vanillons.lib.helpers import url_for
+from vanillons.lib.helpers import url_for, api_url
 
 # Invoke websetup with the current config file
 SetupCommand('setup-app').run([pylons.test.pylonsapp.config['__file__']])
@@ -88,11 +88,11 @@ class TestController(TestRollback):
         
         return kw
     
-    def sign_in(self, user, password=None, **kw):
+    def login(self, user, password=None, **kw):
         kw.update(self.get_auth_kw())
         
         resp = self.post(url_for(controller='auth', action='login'),
-                         dict(username=user.username, password=password or u'testpassword', redirect_url=''), **kw)
+                         dict(username=user.username, password=password or u'testpassword'), **kw)
     
     def pretend(self, user, **kw):
         resp = self.get(url_for(controller='auth', action='pretend', username=user.username))

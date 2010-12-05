@@ -1,0 +1,3 @@
+include vanillons/config/deployment.ini_tmpl
+recursive-include vanillons/public *
+recursive-include vanillons/templates *

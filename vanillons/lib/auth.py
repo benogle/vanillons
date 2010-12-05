@@ -66,6 +66,10 @@ def login(user, redirect_after=True, from_http_auth=False):
     session['username'] = user.username
     session['real_username'] = user.username
     session['role'] = user.role
+    
+    #set this for the middleware and the base controller
+    session['show_debug'] = can_see_debug_info(user)
+    
     if from_http_auth:
         return
     session.save()
@@ -80,6 +84,13 @@ def login(user, redirect_after=True, from_http_auth=False):
         session.save()
         return where_to_go
     return None
+
+def can_see_debug_info(user):
+    """
+    Change this if you have different criteria this if you wanna.
+    """
+    #is_admin uses the session so dont pass the user
+    return is_admin();
 
 def logout():
     
@@ -139,6 +150,8 @@ def get_user(key='user'):
     user_id = session.get(key)
     if user_id:
         setattr(c, key, Session.query(users.User).outerjoin(users.UserPreference).filter(users.User.id == user_id).first())
+        if session['user'] == session['real_user']:
+            c.user = c.real_user = getattr(c, key)
     else:
         setattr(c, key, None)
     

@@ -1,70 +1,63 @@
-from vanillons.api import auth, enforce, FieldEditor
-from vanillons.lib.exceptions import ApiValueException
-from vanillons.lib import exceptions
+from vanillons.api import authorize, enforce, FieldEditor, convert_date
 from vanillons.model import fixture_helpers as fh, Session, users
 from vanillons import api
-from vanillons.tests import TestController
+from vanillons.tests import *
 
 from datetime import datetime, timedelta
 
 import formencode
 import formencode.validators as fv
 
+from pylons_common.lib.exceptions import *
 #
 ## @auth
 #
 
-@auth(check_admin=True)
+@authorize(check_admin=True)
 def auth_admin_fn(user):
     return True
 
-@auth(must_own='ad')
-def auth_owns_fn_user(user, ad):
+@authorize(must_own='pref')
+def auth_owns_fn_user(user, pref):
     return True
 
-@auth(must_own='ad')
-def auth_owns_fn_actual_user(actual_user, ad):
+@authorize(must_own='pref')
+def auth_owns_fn_actual_user(real_user, pref):
     return True
 
-@auth(must_own='ad')
-@enforce(user=users.User, ad=advertisers.Ad)
-def auth_enforce_owns_fn(user, ad):
+@authorize(must_own='pref')
+@enforce(user=users.User, pref=users.UserPreference)
+def auth_enforce_owns_fn(user, pref):
     return True
 
 class TestInit(TestController):
 
     def _create_ad_user(self, make_admin=False):
-        u = make_admin and fh.create_admin() or fh.create_user()
-        
-        adv = fh.create_advertisable(user=u)
-        self.flush()
-        
-        orig_ad = fh.create_ad(advertisable=adv, name=u"test_ad", destination_url=u"http://example.com")
-        self.flush()
-        
-        return u, adv, orig_ad
+        u = make_admin and fh.create_user(is_admin=True) or fh.create_user()
+        p = u.set_preference(u'omg', u'wow')
+        return u, p
     
     def test_auth_admin(self):
         u = fh.create_user()
-        adm = fh.create_admin()
+        adm = fh.create_user(is_admin=True)
         
         assert auth_admin_fn(adm)
-        assert self.throws_exception(lambda: auth_admin_fn(u)).code == errors.FORBIDDEN
+        assert self.throws_exception(lambda: auth_admin_fn(u)).code == FORBIDDEN
 
     def test_auth_owns_pretend(self):
-        u, adv, ad = self._create_ad_user()
+        u, p = self._create_ad_user()
         
         rando = fh.create_user()
         u2 = fh.create_user()
-        adm = fh.create_admin()
+        adm = fh.create_user(is_admin=True)
         
-        assert auth_owns_fn_user(u, ad)
-        assert auth_owns_fn_actual_user(u, ad)
-        assert auth_enforce_owns_fn(u, ad)
-        assert auth_owns_fn_user(adm, ad)
+        assert auth_owns_fn_user(u, p)
+        assert auth_owns_fn_actual_user(u, p)
+        assert auth_enforce_owns_fn(u, p)
+        assert auth_owns_fn_user(adm, p)
         
-        assert self.throws_exception(lambda: auth_owns_fn_user(u2, ad)).code == errors.FORBIDDEN
-        assert self.throws_exception(lambda: auth_enforce_owns_fn(u2, ad)).code == errors.FORBIDDEN
+        assert self.throws_exception(lambda: auth_owns_fn_user(u2, p)).code == FORBIDDEN
+        assert self.throws_exception(lambda: auth_enforce_owns_fn(u2, p)).code == FORBIDDEN
     
     def test_enforce_datetime(self):
         
@@ -77,12 +70,12 @@ class TestInit(TestController):
         fn(u'Jul 3, 2030')
         fn(u'2010-3-23 23:23:56')
         
-        assert self.throws_exception(lambda: fn(u'June 3rd 2030 23:23:56'), types=(ApiValueException,)).code == errors.INVALID
+        assert self.throws_exception(lambda: fn(u'June 3rd 2030 23:23:56'), types=(ApiValueException,)).code == INVALID
     
     def test_field_editor(self):
         
         u = fh.create_user()
-        adm = fh.create_admin()
+        adm = fh.create_user(is_admin=True)
         
         class SomeForm(formencode.Schema):
             things = fv.Number(not_empty=False, min=0)
@@ -99,9 +92,9 @@ class TestInit(TestController):
                 super(Editor, self).__init__(edit_fields, admin_edit_fields, SomeForm)
             
             def edit_error_1(self, actual_user, user, obj, key, value):
-                raise errors.ClientException('error_1')
+                raise ClientException('error_1')
             def edit_error_2(self, actual_user, user, obj, key, value):
-                raise errors.ClientException('error_2')
+                raise ClientException('error_2')
             
             def edit_things(self, actual_user, user, obj, key, value):
                 assert actual_user
@@ -146,16 +139,16 @@ class TestInit(TestController):
         assert obj['things'] == 5.0
         assert 'admin_only' not in obj
         
-        ce = (errors.ClientException,)
+        ce = (ClientException,)
         
         #FAIL case, empty
-        assert self.throws_exception(lambda: editor.edit(u, u, obj), types=ce).code == errors.INCOMPLETE
+        assert self.throws_exception(lambda: editor.edit(u, u, obj), types=ce).code == INCOMPLETE
         
         #FAIL case, dont edit random stuff we dont care about
         obj = {}
-        assert self.throws_exception(lambda: editor.edit(u, u, obj, random='poo'), types=ce).code == errors.INCOMPLETE
+        assert self.throws_exception(lambda: editor.edit(u, u, obj, random='poo'), types=ce).code == INCOMPLETE
         assert not obj
-        assert self.throws_exception(lambda: editor.edit(u, u, obj, admin_only='poo'), types=ce).code == errors.INCOMPLETE
+        assert self.throws_exception(lambda: editor.edit(u, u, obj, admin_only='poo'), types=ce).code == INCOMPLETE
         assert not obj
         editor.edit(u, u, obj, things=4.5, random='poo')
         assert 'things' in obj
@@ -166,9 +159,9 @@ class TestInit(TestController):
         
         #this cant call the function cause it isnt defined
         obj = {}
-        assert self.throws_exception(lambda: editor.edit(u, u, obj, yo_mammas='2'), types=(errors.AdrollException,)).code == errors.INCOMPLETE
+        assert self.throws_exception(lambda: editor.edit(u, u, obj, yo_mammas='2'), types=(AppException,)).code == INCOMPLETE
         
-        exc = self.throws_exception(lambda: editor.edit(u, u, obj, error_1='blah', error_2='blah'), types=(errors.CompoundException,))
+        exc = self.throws_exception(lambda: editor.edit(u, u, obj, error_1='blah', error_2='blah'), types=(CompoundException,))
         assert exc.has_exceptions
         assert len(exc.exceptions) == 2
         assert 'error_1' in [e.msg for e in exc.exceptions]

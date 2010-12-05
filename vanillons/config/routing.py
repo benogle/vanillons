@@ -20,6 +20,12 @@ def make_map(config):
 
     # CUSTOM ROUTES HERE
     map.connect('/', controller='index', action='index')
+    
+    # Web API
+    # Wraps a safe subset of adroll.api for public consumption.
+    map.connect('/api/v{version}/{module}/{function}/{id}', version=1, controller='api', action='dispatch')
+    map.connect('/api/v{version}/{module}/{function}', version=1, controller='api', action='dispatch')
+    map.connect('/api/v{version}/{module}', version=1, controller='api', action='dispatch')
 
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')

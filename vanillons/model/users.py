@@ -7,6 +7,8 @@ import hashlib
 
 from datetime import datetime
 
+from pylons_common.lib import exceptions
+
 ROLE_USER = u'user'
 ROLE_ADMIN = u'admin'
 ROLE_ENGINEER = u'engineer'
@@ -152,6 +154,9 @@ class User(Base):
         """
         return hash_password(password) == self._password
     
+    def is_admin(self):
+        return self.role in [ROLE_ADMIN]
+    
     def deactivate(self):
         """
         """
@@ -182,3 +187,25 @@ class User(Base):
         elif offset < -11:
             offset = offset + 24
         return offset
+    
+    def must_own(self, *things):
+        if self.is_admin():
+            return True
+        for thing in things:
+            if thing and not self.owns(thing):
+                raise exceptions.ClientException("User must be an admin or else own this %s." % thing.__class__.__name__, exceptions.FORBIDDEN)
+    
+    def owns(self, thing):
+        """
+        Does the user own the given thing, or not.
+        """
+        if not thing:
+            return False
+        if hasattr(thing, 'user_id'):
+            return self.id == thing.user_id
+        elif isinstance(thing, list):
+            for item in thing:
+                if not self.owns(item):
+                    return False
+            return True
+        return False

@@ -10,6 +10,8 @@ from routes.middleware import RoutesMiddleware
 
 from vanillons.config.environment import load_environment
 
+from pylons_common.middleware.errors import VariableErrorHandler
+
 def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
     """Create a Pylons WSGI application and return it
 
@@ -39,6 +41,13 @@ def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
     # The Pylons WSGI app
     app = PylonsApp(config=config)
 
+    # Set error handler, if we're customizing the full stack.  This can't be merged
+    # with the block below, because order is important with middleware.  The
+    # VariableErrorHandler relies on SessionMiddleware, so it needs to be wrapped tighter
+    # (instantiated before, ergo called after).
+    if asbool(full_stack):
+        app = VariableErrorHandler(app, global_conf, **config['pylons.errorware'])
+    
     # Routing/Session Middleware
     app = RoutesMiddleware(app, config['routes.map'], singleton=False)
     app = SessionMiddleware(app, config)
@@ -46,9 +55,6 @@ def make_app(global_conf, full_stack=True, static_files=True, **app_conf):
     # CUSTOM MIDDLEWARE HERE (filtered by error handling middlewares)
 
     if asbool(full_stack):
-        # Handle Python exceptions
-        app = ErrorHandler(app, global_conf, **config['pylons.errorware'])
-
         # Display error documents for 401, 403, 404 status codes (and
         # 500 when debug is disabled)
         if asbool(config['debug']):

@@ -1,5 +1,6 @@
 <%!
-import pylons
+import pylons, simplejson as json
+from time import time
 from pylons import tmpl_context as c
 from vanillons.lib import helpers as h
 from vanillons.lib import auth as a
@@ -27,17 +28,24 @@ if not c.meta:
             <script type="text/javascript" src="${h.js_url('include/backbone.js')}"></script>
             <script type="text/javascript" src="${h.js_url('include/jquery.form.js')}"></script>
             <script type="text/javascript" src="${h.js_url('include/jquery.validate.js')}"></script>
+            <script type="text/javascript" src="${h.js_url('include/jquery.cookie.js')}"></script>
             
             <script type="text/javascript" src="${h.js_url('quaid/src/core.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/log.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/util.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/backbone.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/form.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/validation.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/widget.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/simpleconsole.js')}"></script>
             
+            <script type="text/javascript" src="${h.js_url('quaid/src/extension/backbone.js')}"></script>
+            <script type="text/javascript" src="${h.js_url('quaid/src/extension/debug.js')}"></script>
+            <script type="text/javascript" src="${h.js_url('quaid/src/extension/errorhandler.js')}"></script>
+            
             <script type="text/javascript" src="${h.js_url('lib/base.js')}"></script>
+            % if c.show_debug:
+                
+            % endif
         </%def>
         ${self.js_includes()}
         
@@ -48,6 +56,12 @@ if not c.meta:
 			<!--[if IE]>
             <link rel="stylesheet" href="${h.static_url('c', 'ie.css')}" />
             <![endif]-->
+            
+            % if c.show_debug:
+                <link rel="stylesheet" href="${h.static_url('c', 'widgets/debugbar.css')}" />
+            % endif
+            
+            <link rel="stylesheet" href="${h.static_url('c', 'core/notifications.css')}" />
         </%def>
         ${self.header()}
         
@@ -100,6 +114,8 @@ if not c.meta:
                 % endif
                 
                 ${next.body()}
+                
+                <div id="error-display"></div>
             </div>
         </div> <!--page-->
 		<%def name="post_content()"></%def>
@@ -112,37 +128,22 @@ if not c.meta:
                 </p>
             </div>
 		</footer></div>
-		
-		<%def name="debug_bar()">
-			<div id="fancy-debug-bar">
-				<% num_queries = len(c.queries) %>
-				<span class="mini total-queries" title="Double-click to open">
-					${num_queries}
-				</span>
-				
-				<div class="full">
-					<div class="total-info" title="Double-click to minify">
-                        <a href="#" class="last-error" target="applicationerror">last error</a>
-						<span class="data-chunk first">
-							<span class="total-queries data">${num_queries}</span> queries
-						</span>
-						<span class="data-chunk">
-							Query Time: <span class="total-query-time data">${"%.3f" % (c.query_time or 0)}</span> sec
-						</span>
-						<span class="data-chunk">
-							Total Time: <span class="total-time data">${"%.3f" % (time() - c.render_start)}</span> sec
-						</span>
-					</div>
-					
-					<div id="requests">
-						${main_utils.render_request_data(True)}
-					</div>
-				</div>
-				
-            </div>
-		</%def>
-        % if c.show_debug_bar:
-            ${self.debug_bar()}
+        
+        % if c.show_debug:
+            <div id="fancy-debug-bar"></div>
+            <script type="text/javascript">
+                $(document).ready(function(){
+                    <% queries = sorted(c.queries, key=lambda x: -x[1]) %>
+                    <% jsonqueries = [{'query': q, 'time': t} for q, t in c.queries] %>
+                    window.DEBUG = $('#fancy-debug-bar').DebugBar({data:{
+                        'queries': ${len(c.queries)},
+                        'query_time': ${c.query_time or 0},
+                        'total_time': ${time() - c.render_start},
+                        'requested_url': '${c.requested_url | n}',
+                        'query_data': ${json.dumps(jsonqueries) | n}
+                    }});
+                });
+            </script>
         % endif
     </body>
 </html>

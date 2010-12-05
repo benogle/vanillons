@@ -4,7 +4,7 @@ The base Controller API
 
 #careful with the imports. Controllers import * from here...
 from pylons import tmpl_context as c, config, app_globals as g, request, response, session
-from pylons.controllers.util import redirect
+from pylons.controllers.util import redirect, abort
 
 from pylons_common.lib import exceptions, log
 from pylons_common import lib as utils
@@ -42,7 +42,8 @@ class BaseController(WSGIController):
         try:
             self._session = Session
             
-            c.show_debug = request.environ['show_debug'] = auth.is_admin()
+            #this is used by timer proxy and the templates
+            c.show_debug = bool(session.get('show_debug'))
             
             request.environ['USER'] = session.get('username', '')
             request.environ['REAL_USER'] = session.get('real_username', '')

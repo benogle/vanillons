@@ -1,10 +1,15 @@
-from vanillons.weblib.base import h, logger
-from vanillons.lib import exceptions
+from vanillons.lib.base import h, logger
 from vanillons.model import Session, users
 import sqlalchemy as sa
+from pylons.controllers.util import abort
 
-from vanillons.lib.utils import objectify
-from vanillons.lib.exceptions import ApiValueException
+from vanillons.lib import auth
+
+from pylons_common.lib.utils import objectify
+from pylons_common.lib.date import convert_date
+from pylons_common.lib.exceptions import *
+from pylons_common.web.validation import validate
+from pylons_common.lib.decorators import enforce as base_enforce, zipargs, stackable
 
 import formencode.validators as fv
 
@@ -14,53 +19,6 @@ import formencode.validators as fv
     objects to do must_own authorization.
 """
 
-DATE_FORMAT_ACCEPT = [u'%Y-%m-%d %H:%M:%S', u'%Y-%m-%d', u'%m-%d-%Y', u'%m/%d/%Y', u'%m.%d.%Y', u'%b %d, %Y']
-
-def zipargs(decorated_fn):
-    """
-    This will zip up the positional args into kwargs. This makes handling them in
-    decorators easier. Call on the inner deocrator function, and pass in the outer's
-    arg. Outer function must be @stackable. Convolution. Apologies.
-    """
-    def decorator(fn):
-        def new(*args, **kwargs):
-            
-            # Get the original func's param names. If this is the outer decorator, decorated_fn.func_code.co_varnames
-            # will have the inner decorator's names ('args', 'kwargs'). The inner decorator should
-            # attach original_varnames to the function
-            varnames = hasattr(decorated_fn, 'original_varnames') and decorated_fn.original_varnames or decorated_fn.func_code.co_varnames
-            
-            dargs = dict(zip(varnames, args))
-            dargs.update(kwargs)
-            
-            return fn(**dargs)
-        
-        return new
-    
-    return decorator
-
-def stackable(fn):
-    """
-    This will make a decorator 'stackable' in that we can get the original function's params.
-    """
-    def new(*args, **kwargs):
-        
-        decorated_fn = args[0]
-        newfn = fn(*args, **kwargs)
-        if decorated_fn:
-            # We need to pass the original_varnames into every fn we return in these decorators so
-            # the dispatch controller has access to the original function's arg names.
-            # Do this in @auth due to decorator stacking.
-            newfn.func_name = decorated_fn.func_name
-            newfn.original_varnames = hasattr(decorated_fn, 'original_varnames') and decorated_fn.original_varnames or decorated_fn.func_code.co_varnames
-        return newfn
-    
-    return new
-
-##
-### Decorators for api functions
-##
-
 def enforce(**types):
     """
     Assumes all arguments are unicode strings, and converts or resolves them to more complex objects.
@@ -68,116 +26,13 @@ def enforce(**types):
     list of strings that will be converted to a list of complex objects. 
     """
     
-    # there is probably a fancy python way to do this...
+    # put any defaults here...
     types.setdefault('user', users.User)
     types.setdefault('real_user', users.User)
     
-    from datetime import datetime
+    return base_enforce(**types)
     
-    @stackable
-    def decorator(fn):
-        
-        @zipargs(fn)
-        def new(**kwargs):
-            import sqlalchemy as sa
-
-            errors = []
-            
-            def convert(arg_name, arg_type, arg_value):
-                converted_value = arg_value
-                try:
-                    if arg_type is file:
-                        if type(arg_value) is not file:
-                            if hasattr(arg_value, 'file'):
-                                converted_value = arg_value.file
-                            else:
-                                raise ValueError("Value must be an open file object, or uploaded file.")
-                    if arg_type == 'filedict':
-                        if type(arg_value) is not dict:
-                            if hasattr(arg_value, 'file'):
-                                converted_value = {'file': arg_value.file}
-                            else:
-                                raise ValueError("Value must be an open file object, or uploaded file.")
-                            
-                            if hasattr(arg_value, 'filename'):
-                                converted_value['filename'] = arg_value.filename
-                    elif arg_type is int:
-                        converted_value = int(arg_value)
-                    elif arg_type is float:
-                        converted_value = float(arg_value)
-                    elif arg_type is datetime:
-                        converted_value = convert_date(arg_value)
-                    elif type(arg_type) is sa.ext.declarative.DeclarativeMeta:
-                        if type(type(arg_value)) is not sa.ext.declarative.DeclarativeMeta:
-                            
-                            is_int = True
-                            try:
-                                arg_value = int(arg_value)
-                            except ValueError, e:
-                                is_int = False
-                            
-                            if not is_int and hasattr(arg_type, 'eid'):
-                                field = arg_type.eid
-                                if arg_value is str:
-                                    arg_value = arg_value.decode('utf-8')
-                                else:
-                                    arg_value = unicode(arg_value)
-                            else:
-                                field = arg_type.id
-                                arg_value = int(arg_value)
-                            converted_value = Session.query(arg_type).filter(field == arg_value).first() 
-                    elif arg_type is str:
-                        if type(arg_value) is unicode:
-                            converted_value = arg_value.encode('utf-8')
-                        else:
-                            converted_value = str(arg_value)
-                    elif arg_type is unicode:
-                        if type(arg_value) is str:
-                            converted_value = arg_value.decode('utf-8')
-                        else:
-                            converted_value = unicode(arg_value)
-                    elif arg_type is bool:
-                        if type(arg_value) is not bool:
-                            arg_value = arg_value.encode('utf-8').lower()
-                            if arg_value in ['t','true','1','y','yes','on']:
-                                converted_value = True
-                            elif arg_value in ['f','false','0','n','no']:
-                                converted_value = False
-                            else:
-                                raise ValueError('Value must be true or false')
-                except (ValueError, TypeError), e:
-                    errors.append((e, arg_name, arg_value))
-                
-                return converted_value
-
-            for name, value in kwargs.iteritems():
-                if name in types and value is not None:             
-                    t = types[name]
-                    if type(type(value)) is sa.ext.declarative.DeclarativeMeta or isinstance(value, list):
-                        kwargs[name] = convert(name, t, value)
-                    # If the type is a list, this means that we want to 
-                    # return a list of objects of the type at index 0 in the list                        
-                    elif isinstance(t, list):
-                        if not isinstance(value, list):
-                            list_of_values = [s for s in value.split(',') if s]
-                            converted_values = []
-                            t = t[0]
-                            for v in list_of_values:
-                                converted_values.append(convert(name, t, v))
-                        # If the value was already a list, then it must have
-                        # been a list of DB objects, so we didn't need to touch it                       
-                        kwargs[name] = converted_values
-                    else:
-                        kwargs[name] = convert(name, t, value)
-            if errors:
-                raise ApiValueException([{'value': str(e[2]), 'message':str(e[0]), 'field': e[1]} for e in errors], exceptions.INVALID)
-            else:
-                return fn(**kwargs)
-            
-        return new
-    return decorator
-
-def auth(must_own=None, must_own_if_present=None, check_admin=False, has_role=None):
+def authorize(must_own=None, must_own_if_present=None, check_admin=False, has_role=None):
     
     """
     Authorization checking. Will make sure the user is an admin if you want. And it will verify
@@ -190,18 +45,17 @@ def auth(must_own=None, must_own_if_present=None, check_admin=False, has_role=No
         
         @zipargs(fn)
         def new(**kwargs):
-            from adroll.model import errors
             
             # find the user
             user = kwargs.get('real_user') or kwargs.get('user')
             if user is None:
                 try:
-                    user = h.get_real_user()
+                    user = auth.get_real_user()
                 except TypeError, e:
                     user = None
             
             if not user:
-                raise exceptions.ClientException("@auth must have access to a user for authorization. Specify user in the function arguments.", exceptions.INCOMPLETE,field='user')
+                raise ClientException("Please Login!", INCOMPLETE, field='user')
             
             if must_own:
                 # user.must_own takes a list of objects. This allows the user to pass in a single
@@ -214,7 +68,7 @@ def auth(must_own=None, must_own_if_present=None, check_admin=False, has_role=No
                 mo_obj_list = []
                 for var in mo:
                     if var not in kwargs:
-                        raise exceptions.ClientException("Parameter '%s' not found in function arguments." % (var), exceptions.NOT_FOUND, field=var)
+                        raise ClientException("Parameter '%s' not found in function arguments." % (var), NOT_FOUND, field=var)
                     mo_obj_list.append(kwargs[var])
                 
                 user.must_own(*mo_obj_list)
@@ -237,40 +91,16 @@ def auth(must_own=None, must_own_if_present=None, check_admin=False, has_role=No
             
             elif check_admin:
                 if not user.is_admin():
-                    raise exceptions.ClientException("User must be an admin", exceptions.FORBIDDEN)
+                    raise ClientException("User must be an admin", FORBIDDEN)
 
             if has_role:
                 if user.role != has_role:
-                    raise exceptions.ClientException("User must be in role %s" % has_role, exceptions.FORBIDDEN)
+                    raise ClientException("User must be in role %s" % has_role, FORBIDDEN)
             
             return fn(**kwargs)
             
         return new
     return decorator
-
-def convert_date(value):
-    from datetime import datetime
-    
-    if not value:
-        return None
-    
-    if isinstance(value, datetime):
-        return value
-    
-    def try_parse(val, format):
-        try:
-            dt = datetime.strptime(val, format)
-        except ValueError:
-            dt = None
-        return dt
-    
-    converted_value = None
-    for format in DATE_FORMAT_ACCEPT:
-        converted_value = converted_value or try_parse(value, format)
-    if not converted_value:
-        raise ValueError('Cannot convert supposed date %s' % value)
-    
-    return converted_value
 
 class ConvertDate(fv.FancyValidator):
     def _to_python(self, value, state):
@@ -352,7 +182,7 @@ class FieldEditor(object):
         # is there anything we can edit?
         to_edit = [k for k in kwargs.keys() if k in editable_keys]
         if not to_edit:
-            raise exceptions.ClientException('Specify some parameters to edit, please.', code=exceptions.INCOMPLETE)
+            raise ClientException('Specify some parameters to edit, please.', code=INCOMPLETE)
         
         # we fill out the kwargs so we dont piss off the validator. hack. poo. Must have all
         # fields as the validator will too.
@@ -363,7 +193,7 @@ class FieldEditor(object):
         params = validate(self.validator, **kwargs)
         
         #this is for collecting errors. 
-        error = exceptions.CompoundException('Editing issues!', code=exceptions.FAIL)
+        error = CompoundException('Editing issues!', code=FAIL)
         
         # only go through the keys that we got in the original call/request (to_edit)
         for k in to_edit:
@@ -375,13 +205,13 @@ class FieldEditor(object):
                 
                 try:
                     results = getattr(self, fn_name)(actual_user, user, obj, k, param)
-                except exceptions.ClientException, e:
+                except ClientException, e:
                     # if error from editing, we will package it up so as to
                     # return all errors at once
                     error.add(e)
             else:
                 #this is an adroll exception cause it should bubble up to a WebApp email
-                raise exceptions.AppException('Cannot find %s edit function! :(' % fn_name, code=exceptions.INCOMPLETE)
+                raise AppException('Cannot find %s edit function! :(' % fn_name, code=INCOMPLETE)
         
         if error.has_exceptions:
             raise error
@@ -391,3 +221,4 @@ class FieldEditor(object):
         return True
 
 import user
+import error
