@@ -21,15 +21,6 @@ Q.defaultValidationOptions = {
     }
 };
 
-Q.Ready = function(fn){
-    return function(){
-        var fargs = arguments;
-        $(document).ready(function(){
-            fn.apply(this, fargs);
-        });
-    };
-};
-
 Q.Page = Q.Module.extend({
     init: function(settings){
         this.args = arguments;
@@ -58,6 +49,13 @@ Q.RedirectForm = Q.AsyncForm.extend('RedirectForm', {
         
         if(data && data.results && data.results.url)
             $.redirect(data.results.url);
+    }
+});
+
+Q.ReloadForm = Q.AsyncForm.extend('ReloadForm', {
+    _onSuccess: function(data){
+        this._super.apply(this, arguments);
+        $.reload();
     }
 });
 

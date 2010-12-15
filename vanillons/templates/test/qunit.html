@@ -5,11 +5,16 @@
     ${parent.header()}
     <link rel="stylesheet" href="${h.static_url('c', 'test/qunit.css')}"/>
     <script type="text/javascript" src="${h.js_url('test/qunit.js')}"></script>
+    <script type="text/javascript" src="${h.js_url('test/base.js')}"></script>
+    <script type="text/javascript" src="${h.js_url('test/test_base.js')}"></script>
+    
     <script type="text/javascript">
-        $(document).ready(function(){
-        });
+        new Q.TestPage().readyrun();
     </script>
 </%def>
+
+<p>To add tests, add a function to the TESTS global object. When the dom is ready, our little page
+will run everything in TESTS.</p>
 
 <h1 id="qunit-header">QUnit</h1>
 <h2 id="qunit-banner"></h2>

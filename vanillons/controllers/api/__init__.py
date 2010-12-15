@@ -23,6 +23,7 @@ API_ARGS = {
 
 class ApiController(BaseController, ApiMixin):
     
+    # for the api mixin
     Session = Session
     API_MODULE_BASE = API_MODULE_BASE
     API_SIGNATURE_BASE = API_SIGNATURE_BASE
