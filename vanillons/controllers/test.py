@@ -15,10 +15,10 @@ class TestController(BaseController):
     def qunit(self):
         return self.render('/test/qunit.html');
     
-    def async_exercise(self):
-        return self.render('test/async_exercise.html');
+    def exercise(self):
+        return self.render('test/exercise.html');
     
-    @async
+    @ajax
     def rando_form(self, **_):
         """
         A dumb form handler that makes two queries.

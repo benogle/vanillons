@@ -40,7 +40,7 @@ if not c.meta:
             
             <script type="text/javascript" src="${h.js_url('quaid/src/extension/backbone.js')}"></script>
             <script type="text/javascript" src="${h.js_url('quaid/src/extension/debug.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/extension/errorhandler.js')}"></script>
+            <script type="text/javascript" src="${h.js_url('quaid/src/extension/notifications.js')}"></script>
             
             <script type="text/javascript" src="${h.js_url('lib/base.js')}"></script>
             % if c.show_debug:
@@ -101,21 +101,10 @@ if not c.meta:
 		${self.pre_content()}
         <div id="page">
             <div id="page-inner">
-			
-                % if c.announcement:
-                    <div class="announcement announcement-${c.announcement['type']} ${c.announcement.get('multiline') and 'multiline' or ''}">
-                        <div class="top"></div>
-                        <div class="content">
-                            <img src="${h.static_url('i', 'site/note_icon_%s.png' % c.announcement['type'])}" />
-                            <div>${c.announcement['message'] | n}</div>
-                        </div>
-                        <div class="bottom"></div>
-                    </div>
-                % endif
                 
                 ${next.body()}
                 
-                <div id="error-display"></div>
+                <div id="notification-display"></div>
             </div>
         </div> <!--page-->
 		<%def name="post_content()"></%def>
