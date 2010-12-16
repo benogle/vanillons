@@ -74,17 +74,7 @@ class AuthController(BaseController):
         user.email = scrubbed.email
         user.username = scrubbed.email
         user.password = scrubbed.password
-        
-        timezones = utils.get_timezones()
-        hours = int(scrubbed.default_timezone)
-        # adjust for offsets that are greater than 12 hours (these are repeats of other offsets)
-        if hours > 12:
-            hours = hours - 24
-        # also, -12 is a repeat of +12
-        elif hours < -11:
-            hours = hours + 24
-        user.default_timezone = timezones[hours]
-        
+        user.set_timezone_int(scrubbed.default_timezone)
         self.commit()
         
         return {'url': auth.login(user) or '/'}

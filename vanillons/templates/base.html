@@ -1,3 +1,6 @@
+<%namespace name="f" file="/forms.html"/>
+<%namespace name="r" file="/require.html"/>
+
 <%!
 import pylons, simplejson as json
 from time import time
@@ -23,45 +26,16 @@ if not c.meta:
         <title>${c.title or 'Welcome'} | Vanillons</title>
 		
 		<%def name="js_includes()">
-			<script type="text/javascript" src="${h.js_url('jquery.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('include/underscore.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('include/backbone.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('include/jquery.form.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('include/jquery.validate.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('include/jquery.cookie.js')}"></script>
-            
-            <script type="text/javascript" src="${h.js_url('quaid/src/core.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/log.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/util.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/form.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/validation.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/widget.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/simpleconsole.js')}"></script>
-            
-            <script type="text/javascript" src="${h.js_url('quaid/src/extension/backbone.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/extension/debug.js')}"></script>
-            <script type="text/javascript" src="${h.js_url('quaid/src/extension/notifications.js')}"></script>
-            
-            <script type="text/javascript" src="${h.js_url('lib/base.js')}"></script>
-            % if c.show_debug:
-                
-            % endif
+			${r.require_js('core')}
         </%def>
         ${self.js_includes()}
         
         <%def name="header()">
-			<link rel="stylesheet" href="${h.static_url('c', 'main.css')}" />
-            <link rel="stylesheet" href="${h.static_url('c', 'forms.css')}" />
+			${r.require_css('core')}
 			
 			<!--[if IE]>
-            <link rel="stylesheet" href="${h.static_url('c', 'ie.css')}" />
+            ${r.require_css('ie')}
             <![endif]-->
-            
-            % if c.show_debug:
-                <link rel="stylesheet" href="${h.static_url('c', 'widgets/debugbar.css')}" />
-            % endif
-            
-            <link rel="stylesheet" href="${h.static_url('c', 'core/notifications.css')}" />
         </%def>
         ${self.header()}
         
@@ -82,6 +56,10 @@ if not c.meta:
                         % if user and user.id != real_user.id:
                             <span class="pretend-user user">[p: ${user.username}
                             <a href="${h.url_for(controller='auth', action='stop_pretending')}">stop</a>]</span>
+                        % endif
+                        % if a.is_admin():
+                        |
+                        <a href="${h.url_for(controller='admin/search', action='index')}">admin</a>
                         % endif
                         |
                         <a href="${h.url_for(controller='auth', action='logout')}">logout</a>

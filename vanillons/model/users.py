@@ -7,7 +7,7 @@ import hashlib
 
 from datetime import datetime
 
-from pylons_common.lib import exceptions
+from pylons_common.lib import exceptions, date
 
 ROLE_USER = u'user'
 ROLE_ADMIN = u'admin'
@@ -145,7 +145,7 @@ class User(Base):
             Session.add(pref)
             self.preferences_dict[key] = pref
         return pref
-    
+
     def does_password_match(self, password):
         """
         Returns True if the given password matches the stored password.
@@ -161,7 +161,18 @@ class User(Base):
         """
         """
         self.is_active = False
-
+    
+    def set_timezone_int(self, timez):
+        timezones = date.get_timezones()
+        hours = int(timez)
+        # adjust for offsets that are greater than 12 hours (these are repeats of other offsets)
+        if hours > 12:
+            hours = hours - 24
+        # also, -12 is a repeat of +12
+        elif hours < -11:
+            hours = hours + 24
+        self.default_timezone = timezones[hours]
+    
     def as_local_time(self, dt=None):
         """
         Returns the given datetime in user's local timezone. If none is given

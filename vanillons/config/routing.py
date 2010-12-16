@@ -27,6 +27,8 @@ def make_map(config):
     map.connect('/api/v{version}/{module}/{function}', version=1, controller='api', action='dispatch')
     map.connect('/api/v{version}/{module}', version=1, controller='api', action='dispatch')
 
+    map.connect('/admin', controller='admin/search', action='index')
+    
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
 

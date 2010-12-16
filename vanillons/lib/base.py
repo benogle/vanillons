@@ -42,6 +42,12 @@ class BaseController(WSGIController):
         try:
             self._session = Session
             
+            if '_debug_frontend' in request.params:
+                #now we can force this no matter the environment.
+                c.debug_frontend = request.params['_debug_frontend'] == 'True'
+            else:
+                c.debug_frontend = not h.is_production()
+            
             #this is used by timer proxy and the templates
             c.show_debug = bool(session.get('show_debug'))
             

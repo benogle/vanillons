@@ -2,6 +2,7 @@
 import pylons
 from pylons import session, request, tmpl_context as c
 from pylons import url as p_url
+from paste.deploy.converters import asbool
 
 """Helper functions
 
@@ -69,3 +70,9 @@ def has_request_object():
     sure the request object is here.
     """
     return getattr(pylons.request.____local__, 'objects', None)
+    
+def is_production():
+    """
+    is this a production server? (may affect things like https://)
+    """
+    return asbool(pylons.config.get('is_production'))

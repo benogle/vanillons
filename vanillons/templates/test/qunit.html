@@ -1,12 +1,10 @@
 <%inherit file="/base.html"/>
 <%namespace name="f" file="/forms.html"/>
+<%namespace name="r" file="/require.html"/>
 
 <%def name="header()">
     ${parent.header()}
-    <link rel="stylesheet" href="${h.static_url('c', 'test/qunit.css')}"/>
-    <script type="text/javascript" src="${h.js_url('test/qunit.js')}"></script>
-    <script type="text/javascript" src="${h.js_url('test/base.js')}"></script>
-    <script type="text/javascript" src="${h.js_url('test/test_base.js')}"></script>
+    ${r.require('test')}
     
     <script type="text/javascript">
         new Q.TestPage().readyrun();
