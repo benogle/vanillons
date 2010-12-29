@@ -30,7 +30,7 @@
             <div class="item">
                 <div>
                     <span class="name">
-                        <a href="${h.url_for(controller='admin/inspect', action='user')}" title="Inspect this user">
+                        <a href="${h.url_for(controller='admin/inspect', action='user', eid=user.id)}" title="Inspect this user">
                             % if user.first_name and user.last_name:
                                 ${user.first_name} ${user.last_name}
                             % else:
@@ -47,8 +47,8 @@
                 </div>
                 
                 <div>
-                    <a href="${h.api_url('user', 'pretend', username=user.username)}">Pretend</a> |
-                    <a href="${h.api_url('user', 'masquerade', username=user.username)}">Masquerade</a>
+                    <a class="reload-link" href="${h.api_url('user', 'pretend', id=user.id)}">Pretend</a> |
+                    <a class="reload-link" href="${h.api_url('user', 'masquerade', id=user.id)}">Masquerade</a>
                 </div>
                 
                 <div class="meta">

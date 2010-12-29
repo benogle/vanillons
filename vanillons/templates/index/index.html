@@ -2,6 +2,7 @@
 
 <%!
     import pylons
+    from vanillons.lib import auth
 %>
 
 <%def name="header()">
@@ -15,3 +16,7 @@
 
 <h2><a href="${h.url_for(controller='test', action='exercise')}">Framework Exercise</a></h2>
 <h2><a href="${h.url_for(controller='test', action='qunit')}">QUnit Tests</a></h2>
+
+% if auth.is_admin():
+    <h2><a href="${h.url_for(controller='admin/search', action='index')}">Admin Interface</a></h2>
+% endif

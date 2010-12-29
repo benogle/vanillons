@@ -33,7 +33,7 @@ class ApiController(BaseController, ApiMixin):
         Authenticate the user before proceeding with the API call.
         """        
         user = None
-        actual_user = None
+        real_user = None
         auth_type = None
         
         if request.headers.get('Authenticate') or request.headers.get('Authorization'):
@@ -57,4 +57,4 @@ class ApiController(BaseController, ApiMixin):
             real_user = auth.get_real_user()
             logger.info('%s logged in with session cookie' % (user))
         
-        return user, actual_user, auth_type
+        return user, real_user, auth_type

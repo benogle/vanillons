@@ -1,8 +1,9 @@
 
-from vanillons.lib.base import BaseController, h, c, auth
+from vanillons.lib.base import BaseController, h, c, auth, abort, redirect
 
 class AdminController(BaseController):
     
     def __before__(self, *a, **kw):
         if not auth.is_admin():
-            abort(404)
+            return redirect('/')
+            #abort(404)

@@ -59,6 +59,19 @@ Q.ReloadForm = Q.AsyncForm.extend('ReloadForm', {
     }
 });
 
+$.fn.reloadLink = function(){
+    this.click(function(){
+        $.post(this.href, {}, function(){
+            $.reload();
+        });
+        return false;
+    });
+};
+
+$(document).ready(function(){
+    $('.reload-link').reloadLink();
+});
+
 })(jQuery);
 
 

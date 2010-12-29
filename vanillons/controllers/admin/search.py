@@ -10,6 +10,7 @@ import sqlalchemy as sa
 class SearchController(AdminController):
     
     def index(self):
+        c.tab = 'Search'
         
         q = request.params.get('q')
         if q:

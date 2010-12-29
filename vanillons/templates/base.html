@@ -42,7 +42,6 @@ if not c.meta:
     </head>
 
     <body id="${pylons.request.path.strip('/').replace('/','_')}" class="${a.is_logged_in() and 'user-logged-in' or ''}">
-        
 		<div id="header"><header>
 			<div id="header-inner"><hgroup>
                 <div id="header-right">
@@ -55,7 +54,7 @@ if not c.meta:
                         <span class="user real-user">${real_user.username}</span>
                         % if user and user.id != real_user.id:
                             <span class="pretend-user user">[p: ${user.username}
-                            <a href="${h.url_for(controller='auth', action='stop_pretending')}">stop</a>]</span>
+                            <a href="${h.api_url('user', 'stop_pretending')}" class="reload-link">stop</a>]</span>
                         % endif
                         % if a.is_admin():
                         |
@@ -70,7 +69,7 @@ if not c.meta:
                     
                 </div>
                 
-                <h1>Vanillons</h1>
+                <h1><a href="/">Vanillons</a></h1>
                 <h2>Make shit. Quickly.</h2>
             </hgroup></div>
 		</header></div>

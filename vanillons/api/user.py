@@ -1,6 +1,6 @@
 from vanillons.api import enforce, logger, validate, h, authorize, \
                     AppException, ClientException, CompoundException, \
-                    INVALID, NOT_FOUND, FORBIDDEN, abort, FieldEditor
+                    INVALID, NOT_FOUND, FORBIDDEN, abort, FieldEditor, auth
 
 from vanillons.model import users
 import sqlalchemy as sa
@@ -8,9 +8,11 @@ import sqlalchemy as sa
 import formencode
 import formencode.validators as fv
 
+ID_PARAM = 'u'
+
 ROLES = [users.ROLE_USER, users.ROLE_ADMIN, users.ROLE_ENGINEER]
 EDIT_FIELDS = ['password', 'first_name', 'last_name', 'default_timezone']
-ADMIN_EDIT_FIELDS = ['role', 'is_active']
+ADMIN_EDIT_FIELDS = ['role', 'is_active', 'username']
 
 @enforce(key=unicode, value=unicode, use_real_user=bool)
 def set_pref(real_user, user, key, value, use_real_user=True):
@@ -32,8 +34,31 @@ def generate_password():
 @authorize(check_admin=True)
 def get(real_user, user, id):
     if not id:
-        abort(404)
+        abort(403)
     return id
+
+@enforce(u=users.User)
+@authorize(check_admin=True)
+def masquerade(real_user, user, u):
+    if not u:
+        return False
+    auth.login(u, redirect_after=False)
+    return True
+
+@enforce(u=users.User)
+@authorize(check_admin=True)
+def pretend(real_user, user, u):
+    if not u:
+        return False
+    auth.pretend(u, url=None)
+    return True
+
+@enforce()
+@authorize(check_admin=True)
+def stop_pretending(real_user, user):
+    auth.stop_pretending(url=None)
+    return True
+    
 
 @enforce(u=users.User, is_active=bool, default_timezone=int)
 @authorize()
@@ -42,7 +67,7 @@ def edit(real_user, user, u, **kwargs):
     Editing of the campaigns. Supports editing one param at a time. Uses the FieldEditor
     paradigm.
     """
-    
+    print real_user, user, u
     if not u or not(real_user.is_admin() or real_user.id == u.id):
         raise ClientException('User not found', code=NOT_FOUND, field='u')
     
@@ -73,6 +98,9 @@ class Editor(FieldEditor):
     
     def edit_password(self, real_user, user, u, key, param):
         self._edit_generic('Password', u, key, param, can_be_none=False)
+    
+    def edit_username(self, real_user, user, u, key, param):
+        self._edit_generic('Username', u, key, param, can_be_none=False)
     
     def edit_first_name(self, real_user, user, u, key, param):
         self._edit_generic('First Name', u, key, param, can_be_none=False)

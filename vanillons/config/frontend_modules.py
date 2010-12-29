@@ -31,6 +31,7 @@ JS = {
         'include/jquery.validate.js',
         'include/jquery.cookie.js',
         'include/jquery.json.js',
+        'include/jquery.jeditable.js',
         'include/underscore.js',
         'include/backbone.js',
         
@@ -44,6 +45,7 @@ JS = {
         'quaid/src/extension/backbone.js',
         'quaid/src/extension/debug.js',
         'quaid/src/extension/notifications.js',
+        'quaid/src/extension/editablefield.js',
         
         'lib/base.js'
     ]),

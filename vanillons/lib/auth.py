@@ -97,19 +97,21 @@ def logout():
     session.clear()
     session.save()
 
-def pretend(user, url=None):
-    if is_logged_in():
+def pretend(user, url='/'):
+    if is_logged_in() and is_admin():
         session['user'] = user.id
         session['username'] = user.username
         session.save()
-        h.redirect(url or '/')
+        if url:
+            h.redirect(url)
 
-def stop_pretending(url=None):
+def stop_pretending(url='/'):
     if is_logged_in():
         session['user'] = session['real_user']
         session['username'] = session['real_username']
         session.save()
-        h.redirect(url or '/')
+        if url:
+            h.redirect(url)
     
 def redirect_to_sign_in(url=None):
     """

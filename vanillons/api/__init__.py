@@ -30,7 +30,7 @@ def enforce(**types):
     types.setdefault('user', users.User)
     types.setdefault('real_user', users.User)
     
-    return base_enforce(**types)
+    return base_enforce(Session, **types)
     
 def authorize(must_own=None, must_own_if_present=None, check_admin=False, has_role=None):
     
@@ -53,6 +53,10 @@ def authorize(must_own=None, must_own_if_present=None, check_admin=False, has_ro
                     user = auth.get_real_user()
                 except TypeError, e:
                     user = None
+            
+            print kwargs.get('real_user')
+            print kwargs.get('user')
+            print auth.get_real_user()
             
             if not user:
                 raise ClientException("Please Login!", INCOMPLETE, field='user')

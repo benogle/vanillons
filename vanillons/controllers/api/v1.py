@@ -9,6 +9,10 @@ class error:
     class jserror: pass
 
 class user:
+    class pretend: pass
+    class masquerade: pass
+    class stop_pretending: pass
+    
     class edit:
         def output(self, u):
             return user.get().output(u)
