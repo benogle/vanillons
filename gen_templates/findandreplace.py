@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # replace a string in multiple files
 
+# python vanillons/gen_templates/findandreplace.py templates/vanillons
+
 import fileinput
 import glob
 import sys
@@ -9,7 +11,7 @@ import getopt
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-BLACKLIST_START = ['data', '.', 'gen_templates']
+BLACKLIST_START = ['data', '.', 'gen_templates', 'quaid']
 BLACKLIST_END = ['.egg-info', '.komodoproject', '.kpf', '.pyc', '.html.py']
 TEMPLATES = ['.py', '.html', '.ini', '.txt', '.cfg', '.in']
 
@@ -19,7 +21,7 @@ REPLACEMENTS = {
 }
 
 DIR_REPLACEMENTS = {
-    'vanillons': '+project+'
+    'vanillons': '+package+'
 }
 
 def defaultfn(line):

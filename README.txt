@@ -41,5 +41,17 @@ Tests are run via:
     sudo nosetests -s --tests=vanillons.tests
 
 
+Making Templates
+================
+
+Go up a dir and run the findandreplace script
+
+    rm -Rf templates/vanillons
+    python vanillons/gen_templates/findandreplace.py templates/vanillons
+
+Try it out
+
+    paster create -t vanillons MyProj
+
 Extending
 =========

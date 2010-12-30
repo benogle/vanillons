@@ -101,13 +101,15 @@ if not c.meta:
                 $(document).ready(function(){
                     <% queries = sorted(c.queries, key=lambda x: -x[1]) %>
                     <% jsonqueries = [{'query': q, 'time': t} for q, t in c.queries] %>
-                    window.DEBUG = $('#fancy-debug-bar').DebugBar({data:{
+                    window.DEBUG = $('#fancy-debug-bar').DebugBar({
+                    data:{
                         'queries': ${len(c.queries)},
                         'query_time': ${c.query_time or 0},
                         'total_time': ${time() - c.render_start},
                         'requested_url': '${c.requested_url | n}',
                         'query_data': ${json.dumps(jsonqueries) | n}
-                    }});
+                    }
+                    });
                 });
             </script>
         % endif
