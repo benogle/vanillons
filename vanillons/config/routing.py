@@ -12,6 +12,8 @@ def make_map(config):
                  always_scan=config['debug'])
     map.minimization = False
     map.explicit = False
+    map.sub_domains = True
+    map.sub_domains_ignore = "www"
 
     # The ErrorController route (handles 404/500 error pages); it should
     # likely stay at the top, ensuring it can always be resolved
@@ -26,6 +28,11 @@ def make_map(config):
     map.connect('/api/v{version}/{module}/{function}/{id}', version=1, controller='api', action='dispatch')
     map.connect('/api/v{version}/{module}/{function}', version=1, controller='api', action='dispatch')
     map.connect('/api/v{version}/{module}', version=1, controller='api', action='dispatch')
+    
+    # Shortened webservice routes.  Meant to be accessed from api.adroll.com per documentation.
+    map.connect('/v1/{module}/{function}/{id}', version=1, controller='api', action='dispatch', sub_domain='api')
+    map.connect('/v1/{module}/{function}', version=1, controller='api', action='dispatch', sub_domain='api')
+    map.connect('/v1/{module}', version=1, controller='api', action='dispatch', sub_domain='api')
 
     map.connect('/admin', controller='admin/search', action='index')
     

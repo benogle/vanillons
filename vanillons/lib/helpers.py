@@ -15,11 +15,6 @@ available to Controllers. This module is available to templates as 'h'.
 def url_for(*args, **kwargs):
     """
     """
-    if has_request_object() and 'pretend_username' in request.params and 'pretend_username' not in kwargs and request.params['pretend_username']:
-        kwargs['pretend_username'] = request.params['pretend_username']
-    
-    if 'pretend_username' in kwargs and not kwargs.get('pretend_username'):
-        del kwargs['pretend_username']
     
     # pylons 1.0: they got rid of url_for. And it doesnt remember your params anymore.
     # This is a pain in the ass. We have some code that uses url_for outside of a web request
