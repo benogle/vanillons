@@ -66,6 +66,8 @@ class AuthController(BaseController):
     @mixed_response('register')
     def _do_register(self, **kw):
         
+        numusers = len(Session.query(users.User).all())
+        
         scrubbed = self.validate(RegisterForm, **dict(request.params))
         
         user = users.User()
@@ -75,6 +77,11 @@ class AuthController(BaseController):
         user.username = scrubbed.email
         user.password = scrubbed.password
         user.set_timezone_int(scrubbed.default_timezone)
+        
+        #first user is an admin. 
+        if numusers == 0:
+            user.role = users.ROLE_ADMIN
+        
         self.commit()
         
         return {'url': auth.login(user) or '/'}

@@ -36,3 +36,25 @@ class TestAccountController(TestController):
         
         response = self.get(url_for(controller='index', action='index'))
         assert username in response and 'user-logged-in' in response
+    
+    def test_register_first(self):
+        
+        assert len(Session.query(users.User).all()) == 0
+        
+        username = u'test@example.com'
+        post_vars = {'default_timezone' : u'-8', 'password' : u'secret', 'confirm_password' : u'secret', 'email' : username}
+        response = self.client_async(url_for(controller='auth', action='register'), post_vars)
+        self.flush()
+        
+        user = Session.query(users.User).filter_by(username=username).first()
+        assert user
+        assert user.role == users.ROLE_ADMIN
+        
+        username = u'test1@example.com'
+        post_vars = {'default_timezone' : u'-8', 'password' : u'secret', 'confirm_password' : u'secret', 'email' : username}
+        response = self.client_async(url_for(controller='auth', action='register'), post_vars)
+        self.flush()
+        
+        user = Session.query(users.User).filter_by(username=username).first()
+        assert user
+        assert user.role == users.ROLE_USER
