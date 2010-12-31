@@ -22,6 +22,21 @@ The templates/require.html module uses them as well:
 <%namespace name="r" file="/require.html"/>
 r.require('core', 'charting'). 
 """
+import os
+
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+STRUCTURE = {
+    'JS': {
+        'base': os.path.join(PROJECT_PATH, 'public', 'j'),
+        'type': 'js'
+    },
+    
+    'CSS': {
+        'base': os.path.join(PROJECT_PATH, 'public', 'c'),
+        'type': 'css'
+    }
+}
 
 JS = {
     'core': ('build/core.js', [
