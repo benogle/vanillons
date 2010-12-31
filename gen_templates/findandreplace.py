@@ -11,7 +11,7 @@ import getopt
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-BLACKLIST_START = ['data', '.', 'gen_templates', 'quaid']
+BLACKLIST_START = ['data', '.', 'gen_templates', 'quaid', 'build']
 BLACKLIST_END = ['.egg-info', '.komodoproject', '.kpf', '.pyc', '.html.py']
 TEMPLATES = ['.py', '.html', '.ini', '.txt', '.cfg', '.in']
 

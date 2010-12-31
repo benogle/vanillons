@@ -9,10 +9,8 @@ project here, then generate the templates for benogle/vanillons_templates.
 
 ### virtualenv
 
-    http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
-
 Above this dir is a bin dir. It has an activate binary. You need to run it with
-virtual env:
+virtual env. Check out the [virtualenv primer](http://iamzed.com/2009/05/07/a-primer-on-virtualenv/)
 
     source bin/activate
 
