@@ -9,18 +9,21 @@ JS = {
     ])
 }
 
-There is a javascript and a CSS dict. Modules that contain both js and css should
-be named the same.
+There is a javascript and a CSS dict. Modules that contain both js and css
+should be named the same.
 
 There are multiple consumers of these dicts.
 
-The bin/build_frontend.py file does the compression. It isnt smart with respect to
-the output dorectories. It only creates a conrollers and an modules dir. 
+Scriptb uses this for concatenation and compression of the production files.
 
 The templates/require.html module uses them as well:
 
 <%namespace name="r" file="/require.html"/>
-r.require('core', 'charting'). 
+${r.require('core', 'test')}
+
+The above would add all css and js includes from both the core and test modules
+defined in this file. It will include the proper files depending on whether the
+app is in production or dev.
 """
 import os
 
