@@ -67,7 +67,6 @@ def edit(real_user, user, u, **kwargs):
     Editing of the campaigns. Supports editing one param at a time. Uses the FieldEditor
     paradigm.
     """
-    print real_user, user, u
     if not u or not(real_user.is_admin() or real_user.id == u.id):
         raise ClientException('User not found', code=NOT_FOUND, field='u')
     

@@ -74,7 +74,6 @@ class TestController(TestRollback):
     
     def __init__(self, *args, **kwargs):
         import sys
-        print sys.argv
         self.wsgiapp = pylons.test.pylonsapp
         self.config = self.wsgiapp.config
         self.app = fixture.TestApp(self.wsgiapp)

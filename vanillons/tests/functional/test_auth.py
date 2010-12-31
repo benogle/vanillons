@@ -39,7 +39,11 @@ class TestAccountController(TestController):
     
     def test_register_first(self):
         
-        assert len(Session.query(users.User).all()) == 0
+        us = Session.query(users.User).all()
+        if len(us) > 0:
+            for u in us:
+                Session.delete(u)
+            self.flush()
         
         username = u'test@example.com'
         post_vars = {'default_timezone' : u'-8', 'password' : u'secret', 'confirm_password' : u'secret', 'email' : username}

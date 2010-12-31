@@ -29,7 +29,6 @@ class TestInit(TestController):
         url = '/api/v1/user/meow'
         params = {}
         response = self.client_async(url, params, status=501, assert_success=False)
-        print response
         assert 'user.meow not implemented' in response.results.errors[0].message
         
         # no module!
